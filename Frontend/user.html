@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html>
+<head>
+<title>SuperAI</title>
+<style>
+body{font-family:sans-serif;text-align:center;}
+#chat{border:1px solid #ccc;height:300px;overflow:auto;padding:10px;margin:10px;}
+input{width:70%;padding:10px;}
+button{padding:10px 20px;}
+</style>
+</head>
+<body>
+<h1>🧠 SuperAI</h1>
+<div id="chat"></div>
+<input id="q" placeholder="Pose ta question">
+<button onclick="send()">Envoyer</button>
+
+<script>
+const API="https://ton-backend-render.onrender.com";
+const uid=localStorage.getItem('uid')||crypto.randomUUID();
+localStorage.setItem('uid',uid);
+
+async function send(){
+  await fetch(API+'/message',{
+    method:'POST',
+    headers:{'Content-Type':'application/json'},
+    body:JSON.stringify({userId:uid,message:q.value})
+  });
+  q.value='';
+}
+
+setInterval(async()=>{
+  const r=await fetch(API+'/user-messages/'+uid);
+  const d=await r.json();
+  chat.innerHTML='';
+  d.forEach(m=>{
+    const p=document.createElement('p');
+    p.innerText = m.from+" : "+m.text;
+    chat.appendChild(p);
+  });
+},2000);
+</script>
+</body>
+</html>
