@@ -1,0 +1,186 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<title>SuperAI - Admin</title>
+<style>
+  body {
+    margin: 0;
+    font-family: Arial, sans-serif;
+    height: 100vh;
+    display: flex;
+    flex-direction: column;
+    background: linear-gradient(135deg, #ff7e5f, #feb47b);
+    color: #fff;
+  }
+
+  header {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 36px;
+    font-weight: bold;
+    padding: 20px;
+    background-color: rgba(0,0,0,0.2);
+  }
+  header img {
+    height: 50px;
+    margin-right: 15px;
+  }
+
+  #users {
+    display: flex;
+    flex-wrap: wrap;
+    padding: 10px;
+  }
+  .user-button {
+    margin: 5px;
+    padding: 10px 15px;
+    border-radius: 20px;
+    border: none;
+    cursor: pointer;
+    background-color: #6a1b9a;
+    color: #fff;
+  }
+
+  #chat {
+    flex: 1;
+    overflow-y: auto;
+    padding: 20px;
+    background-color: rgba(0,0,0,0.1);
+    border-radius: 10px;
+    margin: 10px;
+  }
+  .message {
+    margin-bottom: 15px;
+    padding: 10px 15px;
+    border-radius: 20px;
+    max-width: 80%;
+    word-wrap: break-word;
+  }
+  .message.user {
+    background-color: #2d9cdb;
+    margin-left: auto;
+    text-align: right;
+  }
+  .message.admin {
+    background-color: #f39c12;
+    margin-right: auto;
+    text-align: left;
+  }
+  .message.ai {
+    background-color: #27ae60;
+    margin-right: auto;
+    text-align: left;
+  }
+
+  #input-area {
+    display: flex;
+    padding: 10px;
+    background-color: rgba(0,0,0,0.2);
+  }
+  #input-area input {
+    flex: 1;
+    padding: 15px;
+    font-size: 18px;
+    border-radius: 25px;
+    border: none;
+    outline: none;
+  }
+  #input-area button {
+    padding: 15px 20px;
+    font-size: 18px;
+    margin-left: 10px;
+    border: none;
+    border-radius: 25px;
+    cursor: pointer;
+  }
+  #reply-button { background-color: #e94e77; color: #fff; }
+  #ai-button { background-color: #27ae60; color: #fff; }
+</style>
+</head>
+<body>
+
+<header>
+  <img src="https://cdn-icons-png.flaticon.com/512/4712/4712277.png" alt="Logo">
+  SuperAI Admin
+</header>
+
+<div id="users"></div>
+<div id="chat"></div>
+
+<div id="input-area">
+  <input type="text" id="reply" placeholder="Répondre...">
+  <button id="reply-button">Répondre</button>
+  <button id="ai-button">IA répond</button>
+</div>
+
+<script>
+const API = "https://superai-project-9tgb.onrender.com";
+const usersDiv = document.getElementById("users");
+const chat = document.getElementById("chat");
+const replyInput = document.getElementById("reply");
+let currentUser = null;
+
+async function loadUsers() {
+  const res = await fetch(API + "/users");
+  const users = await res.json();
+  usersDiv.innerHTML = "";
+  users.forEach(u => {
+    const btn = document.createElement("button");
+    btn.className = "user-button";
+    btn.textContent = u.id;
+    btn.onclick = () => selectUser(u.id);
+    usersDiv.appendChild(btn);
+  });
+}
+
+async function selectUser(userId) {
+  currentUser = userId;
+  const res = await fetch(API + "/messages/" + userId);
+  const messages = await res.json();
+  chat.innerHTML = "";
+  messages.forEach(m => addMessage(m.text, m.from));
+}
+
+function addMessage(text, from) {
+  const div = document.createElement("div");
+  div.className = "message " + from;
+  div.textContent = text;
+  chat.appendChild(div);
+  chat.scrollTop = chat.scrollHeight;
+}
+
+document.getElementById("reply-button").onclick = async () => {
+  if (!currentUser) return;
+  const text = replyInput.value.trim();
+  if (!text) return;
+  await fetch(API + "/reply", {
+    method: "POST",
+    headers: {"Content-Type":"application/json"},
+    body: JSON.stringify({user: currentUser, text})
+  });
+  addMessage(text, "admin");
+  replyInput.value = "";
+};
+
+document.getElementById("ai-button").onclick = async () => {
+  if (!currentUser) return;
+  const res = await fetch(API + "/ai-reply", {
+    method: "POST",
+    headers: {"Content-Type":"application/json"},
+    body: JSON.stringify({user: currentUser})
+  });
+  const data = await res.json();
+  if (data.ok) {
+    const last = await fetch(API + "/messages/" + currentUser);
+    const messages = await last.json();
+    addMessage(messages[messages.length - 1].text, "ai");
+  }
+};
+
+loadUsers();
+</script>
+
+</body>
+</html>
