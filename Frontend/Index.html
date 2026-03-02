@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html>
+<head>
+<title>NeuroIA</title>
+</head>
+<body>
+<h1 style="text-align:center;">🧠 NeuroIA</h1>
+
+<div id="chat"></div>
+
+<input id="q" placeholder="Pose ta question">
+<button onclick="send()">Envoyer</button>
+
+<script>
+const userId = localStorage.getItem('uid') || crypto.randomUUID();
+localStorage.setItem('uid',userId);
+
+async function send(){
+  const msg = q.value;
+  await fetch('http://localhost:3000/message',{
+    method:'POST',
+    headers:{'Content-Type':'application/json'},
+    body:JSON.stringify({userId,message:msg})
+  });
+  q.value='';
+}
+
+setInterval(async ()=>{
+  const res = await fetch('http://localhost:3000/user-messages/'+userId);
+  const data = await res.json();
+  chat.innerHTML='';
+  data.forEach(m=>{
+    const d=document.createElement('div');
+    d.innerText = m.from+" : "+m.text;
+    chat.appendChild(d);
+  });
+},2000);
+</script>
+</body>
+</html>
